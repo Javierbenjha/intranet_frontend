@@ -1,0 +1,82 @@
+<div class="auth-container">
+  <div class="auth-box">
+    <p-card styleClass="auth-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <i class="pi pi-user-plus header-icon"></i>
+          <h2>Crear Cuenta</h2>
+        </div>
+      </ng-template>
+      
+      <div class="row">
+        <div class="field">
+          <label for="nombre">Nombre</label>
+          <input pInputText id="nombre" [(ngModel)]="nombre" class="w-full" placeholder="Juan" />
+        </div>
+        <div class="field">
+          <label for="apellido">Apellido</label>
+          <input pInputText id="apellido" [(ngModel)]="apellido" class="w-full" placeholder="Pérez" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Correo electrónico</label>
+        <input pInputText id="email" [(ngModel)]="email" class="w-full" placeholder="correo@escuela.com" />
+      </div>
+      
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <p-password 
+          id="password" 
+          [(ngModel)]="password" 
+          [toggleMask]="true" 
+          placeholder="Mínimo 6 caracteres"
+          class="w-full" 
+          inputStyleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirmar contraseña</label>
+        <p-password 
+          id="confirmPassword" 
+          [(ngModel)]="confirmPassword" 
+          [feedback]="false"
+          [toggleMask]="true" 
+          placeholder="Repite tu contraseña"
+          class="w-full" 
+          inputStyleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="rol">Tipo de cuenta</label>
+        <p-select 
+          id="rol" 
+          [(ngModel)]="rol" 
+          [options]="roles" 
+          optionLabel="label" 
+          optionValue="value"
+          placeholder="Selecciona un rol"
+          class="w-full" />
+      </div>
+
+      @if (error()) {
+        <p-message severity="error" [text]="error()" styleClass="w-full mb-3" />
+      }
+
+      @if (success()) {
+        <p-message severity="success" [text]="success()!" styleClass="w-full mb-3" />
+      }
+
+      <p-button 
+        label="Crear Cuenta" 
+        (onClick)="onRegister()" 
+        [loading]="authService.isLoading()"
+        styleClass="w-full mb-3" 
+        size="large" />
+      
+      <div class="login-link">
+        ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia sesión aquí</a>
+      </div>
+    </p-card>
+  </div>
+</div>
