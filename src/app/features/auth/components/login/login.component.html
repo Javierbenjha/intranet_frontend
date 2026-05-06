@@ -42,15 +42,12 @@
       <div class="form-fields">
         <div class="field-container">
           <label for="email">Correo electrónico</label>
-          <span class="p-input-icon-left p-input-icon-right w-full">
-            <i class="pi pi-envelope"></i>
-            <input 
-              pInputText 
-              id="email" 
-              [(ngModel)]="email" 
-              placeholder="correo@escuela.com" 
-              class="w-full" />
-          </span>
+          <input 
+            pInputText 
+            id="email" 
+            [(ngModel)]="email" 
+            placeholder="correo@escuela.com" 
+            class="w-full" />
         </div>
 
         <div class="field-container">
@@ -67,7 +64,7 @@
         </div>
 
         <div class="form-options">
-          <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+          <a routerLink="/auth/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
         </div>
       </div>
 

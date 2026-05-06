@@ -21,6 +21,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/components/register/register.component').then(m => m.RegisterComponent)
       },
       {
+        path: 'forgot-password',
+        loadComponent: () => import('./features/auth/components/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+      },
+      {
         path: '',
         redirectTo: 'login',
         pathMatch: 'full'

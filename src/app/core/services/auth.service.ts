@@ -1,6 +1,32 @@
-import { Injectable, signal } from '@angular/core';
-import { User } from '../models';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { User, UserRole } from '../models';
 import { JwtService } from './jwt.service';
+import { environment } from '../../../environments/environment';
+
+const API_URL = environment.apiUrl;
+
+function mapRole(rol: string): UserRole {
+  const normalized = rol.toLowerCase();
+  if (normalized === 'director' || normalized === 'profesor' || normalized === 'estudiante') {
+    return normalized;
+  }
+  return 'estudiante';
+}
+
+interface BackendAuthResponse {
+  success: boolean;
+  message?: string;
+  token?: string;
+  user?: {
+    id: number;
+    email: string;
+    nombre: string;
+    apellido: string;
+    rol: string;
+    avatar: string;
+  };
+}
 
 export interface LoginResponse {
   success: boolean;
@@ -15,6 +41,9 @@ export interface RegisterResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http = inject(HttpClient);
+  private jwtService = inject(JwtService);
+
   private currentUser = signal<User | null>(null);
   private isAuthenticated = signal<boolean>(false);
   private loading = signal<boolean>(false);
@@ -23,37 +52,7 @@ export class AuthService {
   authenticated = this.isAuthenticated.asReadonly();
   isLoading = this.loading.asReadonly();
 
-  private users: (User & { password: string })[] = [
-    {
-      id: 1,
-      email: 'director@escuela.com',
-      nombre: 'Director',
-      apellido: 'Administrativo',
-      rol: 'director',
-      password: 'director123',
-      avatar: 'https://ui-avatars.com/api/?name=Director+Admin&background=0D8ABC&color=fff'
-    },
-    {
-      id: 2,
-      email: 'profesor@escuela.com',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      rol: 'profesor',
-      password: 'profesor123',
-      avatar: 'https://ui-avatars.com/api/?name=Juan+Perez&background=10B981&color=fff'
-    },
-    {
-      id: 3,
-      email: 'estudiante@escuela.com',
-      nombre: 'María',
-      apellido: 'García',
-      rol: 'estudiante',
-      password: 'estudiante123',
-      avatar: 'https://ui-avatars.com/api/?name=Maria+Garcia&background=F59E0B&color=fff'
-    }
-  ];
-
-  constructor(private jwtService: JwtService) {
+  constructor() {
     this.checkStoredAuth();
   }
 
@@ -72,25 +71,37 @@ export class AuthService {
   async login(email: string, password: string): Promise<LoginResponse> {
     this.loading.set(true);
 
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const response = await this.http.post<BackendAuthResponse>(`${API_URL}/api/auth/login`, {
+        email,
+        password
+      }).toPromise();
 
-    const foundUser = this.users.find(u => u.email === email && u.password === password);
+      if (response?.success && response.token && response.user) {
+        const user: User = {
+          id: response.user.id,
+          email: response.user.email,
+          nombre: response.user.nombre,
+          apellido: response.user.apellido,
+          rol: mapRole(response.user.rol),
+          avatar: response.user.avatar
+        };
 
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      const token = this.jwtService.generateMockToken(userWithoutPassword);
+        this.jwtService.setToken(response.token);
+        this.jwtService.setUser(user);
+        this.currentUser.set(user);
+        this.isAuthenticated.set(true);
+        this.loading.set(false);
 
-      this.jwtService.setToken(token);
-      this.jwtService.setUser(userWithoutPassword);
-      this.currentUser.set(userWithoutPassword);
-      this.isAuthenticated.set(true);
+        return { success: true, user };
+      }
+
       this.loading.set(false);
-
-      return { success: true, user: userWithoutPassword };
+      return { success: false, message: response?.message || 'Credenciales inválidas' };
+    } catch (error: any) {
+      this.loading.set(false);
+      return { success: false, message: error.error?.message || 'Error de conexión' };
     }
-
-    this.loading.set(false);
-    return { success: false, message: 'Credenciales inválidas' };
   }
 
   async register(data: {
@@ -102,34 +113,67 @@ export class AuthService {
   }): Promise<RegisterResponse> {
     this.loading.set(true);
 
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const response = await this.http.post<BackendAuthResponse>(`${API_URL}/api/auth/register`, {
+        email: data.email,
+        password: data.password,
+        nombre: data.nombre,
+        apellido: data.apellido,
+        rol: data.rol?.toUpperCase() || 'ESTUDIANTE'
+      }).toPromise();
 
-    const exists = this.users.find(u => u.email === data.email);
-    if (exists) {
+      if (response?.success && response.token && response.user) {
+        const user: User = {
+          id: response.user.id,
+          email: response.user.email,
+          nombre: response.user.nombre,
+          apellido: response.user.apellido,
+          rol: mapRole(response.user.rol),
+          avatar: response.user.avatar
+        };
+
+        this.jwtService.setToken(response.token);
+        this.jwtService.setUser(user);
+        this.currentUser.set(user);
+        this.isAuthenticated.set(true);
+        this.loading.set(false);
+
+        return { success: true, message: 'Usuario registrado exitosamente' };
+      }
+
       this.loading.set(false);
-      return { success: false, message: 'El correo ya está registrado' };
+      return { success: false, message: response?.message || 'Error al registrar' };
+    } catch (error: any) {
+      this.loading.set(false);
+      return { success: false, message: error.error?.message || 'Error de conexión' };
     }
-
-    const newUser: User & { password: string } = {
-      id: this.users.length + 1,
-      email: data.email,
-      nombre: data.nombre,
-      apellido: data.apellido,
-      rol: data.rol || 'estudiante',
-      password: data.password,
-      avatar: `https://ui-avatars.com/api/?name=${data.nombre}+${data.apellido}&background=random`
-    };
-
-    this.users.push(newUser);
-    this.loading.set(false);
-
-    return { success: true, message: 'Usuario registrado exitosamente' };
   }
 
   logout(): void {
     this.jwtService.removeToken();
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
+  }
+
+  async forgotPassword(email: string): Promise<RegisterResponse> {
+    this.loading.set(true);
+
+    try {
+      const response = await this.http.post<BackendAuthResponse>(`${API_URL}/api/auth/forgot-password`, {
+        email
+      }).toPromise();
+
+      this.loading.set(false);
+      
+      if (response?.success) {
+        return { success: true, message: response.message || 'Se ha enviado un enlace de recuperación a tu correo' };
+      }
+
+      return { success: false, message: response?.message || 'Error al procesar la solicitud' };
+    } catch (error: any) {
+      this.loading.set(false);
+      return { success: false, message: error.error?.message || 'Error de conexión' };
+    }
   }
 
   isLoggedIn(): boolean {

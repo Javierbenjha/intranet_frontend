@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "primeicons/primeicons.css";
+@import url('https://unpkg.com/primeicons/primeicons.css');
 
 * {
   box-sizing: border-box;
@@ -886,6 +886,41 @@ html.dark-mode main {
 
 .register-link:hover {
   text-decoration: underline;
+}
+
+.row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.register-btn {
+  margin-bottom: 1.5rem;
+}
+
+.login-prompt {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark-mode .login-prompt {
+  color: #9ca3af;
+}
+
+.login-link {
+  color: #6366f1;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.forgot-btn {
+  margin-bottom: 1.5rem;
 }
 
 .w-full {
